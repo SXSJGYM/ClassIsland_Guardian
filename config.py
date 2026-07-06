@@ -1,5 +1,5 @@
-from utils.database import database
-from utils.log import log
+from utils.database import Database
+from utils.log import Log
 import ctypes
 import sys
 import subprocess
@@ -32,10 +32,9 @@ def main():
                                             sys.executable,
                                             " ".join(sys.argv), None, 1)
 
-    global log , db
-    db = database(r'.\guardian_config.db',r'.\data\config_backup.db',r'config_sha256')
+    global db
+    db = Database(r'.\guardian_config.db',r'.\data\config_backup.db',r'config_sha256')
     db.read_database()
-    log = log()
 
 if __name__ == "__main__":
     main()

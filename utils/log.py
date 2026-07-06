@@ -2,7 +2,7 @@ from datetime import datetime
 import os
 import sys
 
-class log:
+class Log:
     def __init__(self):
         self.logfile = os.path.join(os.path.dirname(sys.executable) if getattr(sys, 'frozen', False) else os.path.dirname(__file__), 'guardian.log')
     
@@ -31,4 +31,4 @@ class log:
     def _organize_log(self):
         pass 
 
-log = log()
+Log = Log()

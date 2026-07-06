@@ -9,10 +9,10 @@ from datetime import datetime
 import time
 import getpass
 import sys
-from .log import log
+from .log import Log
 
 # 封装数据库方法
-class database:
+class Database:
     def __init__(self,install_dir):
         self.install_dir = install_dir
         self.database_path = os.path.join(install_dir,'data','guardian_config.db')
@@ -32,7 +32,7 @@ class database:
                     self.path["classisland_process_name"] = row[1] or "ClassIsland.Desktop.exe"
                     self.path["classisland_launcher_name"] = row[2] or "ClassIsland.exe"
                     if not row[0] or not os.path.isdir(row[0]):
-                        log.error(f'ClassIsland 路径无效或不存在: {row[0]}')
+                        Log.error(f'ClassIsland 路径无效或不存在: {row[0]}')
                         return False 
                         
                 cursor.execute("SELECT password FROM config WHERE id=1")
@@ -43,7 +43,7 @@ class database:
                 return True
 
         except Exception as e:
-            log.error(f'读取配置失败: {e}')
+            Log.error(f'读取配置失败: {e}')
             return False
 
 
@@ -90,5 +90,5 @@ class database:
                 return self.database_path
             
         except Exception as e:
-            log.error(f'创建数据库时出错，错误为: {e}')
+            Log.error(f'创建数据库时出错，错误为: {e}')
             return False

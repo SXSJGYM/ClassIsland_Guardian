@@ -14,7 +14,7 @@ import ctypes
 import sys
 import subprocess
 
-from utils.database import database
+from utils.database import Database
 
 version = 'v0.20260531.1'
 maketime = '2026-5-31 9:08'
@@ -161,7 +161,7 @@ def main():
                                             sys.executable,
                                             " ".join(sys.argv), None, 1)
 
-    db = database('.\\','','')
+    db = Database('.\\','','')
     global config
     config = config()
     configure()

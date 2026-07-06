@@ -7,16 +7,10 @@ import time
 import sys
 from datetime import datetime 
 
-from utils.log import log
-from utils.database import database
-from utils.process import process
-
-# 获取当前运行目录 
-def get_exe_dir():
-    if getattr(sys, 'frozen', False):
-        return os.path.dirname(sys.executable)
-    else:
-        return os.path.dirname(os.path.abspath(__file__))
+from utils.log import Log
+from utils.database import Database
+from utils.process import Process
+from utils.exec import Exec
 
 # 设置计划任务
 def register_self():
@@ -29,10 +23,10 @@ def register_self():
             capture_output=True, text=True
         )
         if result.returncode == 0:
-            log.info('自启动项存在')
+            Log.info('自启动项存在')
             return True
         
-        log.info('自启动项不存在，创建')
+        Log.info('自启动项不存在，创建')
         subprocess.run([
             "schtasks", "/Create",
             "/TN", task_name,
@@ -42,57 +36,56 @@ def register_self():
             "/RL", "HIGHEST",
             "/F"
         ], capture_output=True)
-        log.info('创建成功')
+        Log.info('创建成功')
         return True
     except Exception:
-        log.info('')
+        Log.info('')
         return False
 
 # 进程丢失后处理函数
 def process_missing():
-    if process.start_classisland():
-        log.warn('尝试拉起ClassIsland')
+    if Process.start_classisland():
+        Log.warn('尝试拉起ClassIsland')
         time.sleep(30)
-        status = process.classisland_status_check()
+        status = Process.check_classisland_status()
         if status == 1:
-            log.info('拉起成功，ClassIsland进程正常')
+            Log.info('拉起成功，ClassIsland进程正常')
             return
     
-    log.warn('拉起失败，ClassIsland进程仍未在运行，尝试修复')
-    if process.restore_from_backup():
-        log.info('修复成功，尝试拉起ClassIsland')
-        if process.start_classisland():
-            log.info('拉起成功，ClassIsland进程正常')
+    Log.warn('拉起失败，ClassIsland进程仍未在运行，尝试修复')
+    if Process.restore_from_backup():
+        Log.info('修复成功，尝试拉起ClassIsland')
+        if Process.start_classisland():
+            Log.info('拉起成功，ClassIsland进程正常')
             return
 
-    log.error('修复失败')
+    Log.error('修复失败')
 
 def main():
     try: 
         global db
-        global process
+        global Process
 
-        db = database(os.path.joinget_exe_dir())
+        db = Database(Exec.get_exe_dir())
         db.read_database()
-        process = process(db)
-        log.info('Classisland Guardian 已启动')
+        Process = Process(db)
+        Log.info('Classisland Guardian 已启动')
 
         register_self()
 
         while(True):
-            
             time.sleep(120)
-            status = process.classisland_status_check()
+            status = Process.check_classisland_status()
             if status == 1:
-                log.info('检查ClassIsland，进程正常')
+                Log.info('检查ClassIsland，进程正常')
             elif status == 0:
                 process_missing()
             elif status >= 2:
-                log.info(f'(Warning) 检测到 {status} 个ClassIsland进程，确认卡死，正在重启')
-                process.reboot_classisland()
+                Log.info(f'(Warning) 检测到 {status} 个ClassIsland进程，确认卡死，正在重启')
+                Process.reboot_classisland()
     except Exception as e:
             try:
-                log.error(f'发生无法处理的错误：{e}')
+                Log.error(f'发生无法处理的错误：{e}')
             except:
                 logfile = os.path.join(os.path.dirname(sys.executable) if getattr(sys, 'frozen', False) else os.path.dirname(__file__), 'guardian.log')
                 with open(logfile, 'a') as f:
