@@ -12,6 +12,7 @@ class Process:
 
     # 检查classisland进程数量并返回
     def check_classisland_status(self):
+        '检查Classisland进程数量。 返回Classisland进程数量(int)'
         process_quantity = 0
         for proc in psutil.process_iter(['name']):
             if proc.info['name'] == self.db.path.get('classisland_process_name'):
@@ -21,16 +22,18 @@ class Process:
     # 启动ClassIsland
     def start_classisland(self):
         '启动Classisland。 成功返回True，失败返回False'
+        Exec.remove_ifeo(self.db.path.get('classisland_process_name'))
         return Exec.start(os.path.join(self.db.path.get('classisland_path'),self.db.get('classisland_launcher_name')))
         
     # 重启ClassIsland
     def reboot_classisland(self):
-        subprocess.run(
-            ['TASKKILL', '/F', '/IM', self.db.path.get('classisland_process_name')],
-            capture_output=True
-        )
+        '重启Classisland。 成功返回True，失败返回False'
+        if not Exec.kill_process(self.db.get('classisland_process_name')):
+            Log.info('重启失败')
+            return False
         time.sleep(3)
-        if self.start_classisland():
-            Log.info('重启成功')
-            return
-        Log.error('重启失败')
+        if not self.start_classisland():
+            Log.info('重启失败')
+            return False
+        Log.info('重启成功')
+        return True

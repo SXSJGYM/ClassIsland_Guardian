@@ -11,7 +11,7 @@ class Snapshot:
         self.snapshot_dir = os.path.join(Exec.get_exe_path(),'data','snapshot')
         
     def list_snapshot(self):
-        '列出所有可用的快照 成功返回列表，失败返回False'
+        '列出所有可用的快照。 成功返回列表，失败返回False'
         try:
             filelist = os.listdir(self.list_snapshot)
             return filelist
@@ -19,7 +19,7 @@ class Snapshot:
             return False
         
     def restore_snapshot(self,name):
-        '恢复到指定的快照 传入要恢复快照的文件名(string) 成功返回True，失败返回False'
+        '恢复到指定的快照。 传入要恢复快照的文件名(string) 成功返回True，失败返回False'
         Exec.kill_process(self.db.path.get('classisland_process_name'))
         if os.path.exists(os.path.join(self.snapshot_dir,name)):
             try:
@@ -38,3 +38,6 @@ class Snapshot:
         else:
             Log.error(f'恢复时出错，指定的快照文件不存在')
             return False
+    
+    def create_snapshot(self,name):
+        '创建一个快照'
