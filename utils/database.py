@@ -25,20 +25,20 @@ class Database:
         try:
             with sqlite3.connect(self.database_path) as conn:
                 cursor = conn.cursor()
-                cursor.execute("SELECT classisland_path, classisland_process_name, classisland_launcher_name FROM paths WHERE id=1")
+                cursor.execute('SELECT classisland_path, classisland_process_name, classisland_launcher_name FROM paths WHERE id=1')
                 row = cursor.fetchone()
                 if row:
-                    self.path["classisland_path"] = row[0]
-                    self.path["classisland_process_name"] = row[1] or "ClassIsland.Desktop.exe"
-                    self.path["classisland_launcher_name"] = row[2] or "ClassIsland.exe"
+                    self.path['classisland_path'] = row[0]
+                    self.path['classisland_process_name'] = row[1] or 'ClassIsland.Desktop.exe'
+                    self.path['classisland_launcher_name'] = row[2] or 'ClassIsland.exe'
                     if not row[0] or not os.path.isdir(row[0]):
                         Log.error(f'ClassIsland 路径无效或不存在: {row[0]}')
                         return False 
                         
-                cursor.execute("SELECT password FROM config WHERE id=1")
+                cursor.execute('SELECT password FROM config WHERE id=1')
                 row = cursor.fetchone()
                 if row:
-                    self.config["password"] = row[0]
+                    self.config['password'] = row[0]
                 
                 return True
 
@@ -72,19 +72,19 @@ class Database:
                     INSERT OR REPLACE INTO paths (id, classisland_path, classisland_process_name, classisland_launcher_name, guardian_path)
                         VALUES (1, ?, ?, ?, ?)
                 ''', (
-                config_data.get("classisland_path", r"D:\ClassIsland"),
-                config_data.get("classisland_process_name", "ClassIsland.Desktop.exe"),
-                config_data.get("classisland_launcher_name", "ClassIsland.exe"),
-                config_data.get("guardian_path")
+                config_data.get('classisland_path', r'D:\ClassIsland'),
+                config_data.get('classisland_process_name', 'ClassIsland.Desktop.exe'),
+                config_data.get('classisland_launcher_name', 'ClassIsland.exe'),
+                config_data.get('guardian_path')
                 ))
                 cursor.execute('''
                     INSERT OR REPLACE INTO config (id, password, is_process_protect, is_prestart, is_prevent_deletion_protect)
                         VALUES (1, ?, ?, ?, ?)
                 ''', (
-                config_data.get("password", ""),
-                1 if config_data.get("is_process_protect", False) else 0,
-                1 if config_data.get("is_prestart", False) else 0,
-                1 if config_data.get("is_prevent_deletion_protect", False) else 0
+                config_data.get('password', ''),
+                1 if config_data.get('is_process_protect', False) else 0,
+                1 if config_data.get('is_prestart', False) else 0,
+                1 if config_data.get('is_prevent_deletion_protect', False) else 0
                 ))
                 conn.commit()
                 return self.database_path

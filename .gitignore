@@ -15,6 +15,7 @@ dist/
 data/
 snapshot/
 recovery/
+test.*
 
 .vscode/
 *.workspace

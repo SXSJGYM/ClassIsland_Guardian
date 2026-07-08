@@ -66,7 +66,7 @@ def main():
         global db
         global Process
 
-        db = Database(Exec.get_exe_dir())
+        db = Database(Exec.get_exe_path())
         db.read_database()
         Process = Process(db)
         Log.info('Classisland Guardian 已启动')

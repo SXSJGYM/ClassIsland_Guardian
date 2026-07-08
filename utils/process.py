@@ -2,7 +2,9 @@ import psutil
 import os
 import subprocess
 import time
+
 from utils.log import Log
+from utils.exec import Exec
 
 class Process:
     def __init__(self,db):
@@ -18,15 +20,8 @@ class Process:
     
     # 启动ClassIsland
     def start_classisland(self):
-        exe_path = os.path.join(self.db.path.get('classisland_path'), self.db.path.get('classisland_launcher_name'))
-        if os.path.exists(exe_path):
-            subprocess.Popen(
-                [exe_path],
-                cwd=self.db.path.get('classisland_path')
-            )
-            return True
-        else:
-            return False
+        '启动Classisland。 成功返回True，失败返回False'
+        return Exec.start(os.path.join(self.db.path.get('classisland_path'),self.db.get('classisland_launcher_name')))
         
     # 重启ClassIsland
     def reboot_classisland(self):

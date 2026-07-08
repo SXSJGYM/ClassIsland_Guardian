@@ -8,7 +8,7 @@ from utils.log import Log
 class Snapshot:
     def __init__(self,db):
         self.db = db
-        self.snapshot_dir = os.path.join(Exec.get_exe_dir(),'data','snapshot')
+        self.snapshot_dir = os.path.join(Exec.get_exe_path(),'data','snapshot')
         
     def list_snapshot(self):
         '列出所有可用的快照 成功返回列表，失败返回False'
