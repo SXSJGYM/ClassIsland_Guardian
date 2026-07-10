@@ -1,8 +1,5 @@
-import psutil
 import subprocess
 import os
-import zipfile
-import shutil
 import time
 import sys
 from datetime import datetime 
@@ -11,6 +8,7 @@ from utils.log import Log
 from utils.database import Database
 from utils.process import Process
 from utils.exec import Exec
+from utils.snapshot import Snapshot
 
 # 设置计划任务
 def register_self():
@@ -53,7 +51,7 @@ def process_missing():
             return
     
     Log.warn('拉起失败，ClassIsland进程仍未在运行，尝试修复')
-    if Process.restore_from_backup():
+    if Snapshot.restore_snapshot(Snapshot.list_snapshot()[0]):
         Log.info('修复成功，尝试拉起ClassIsland')
         if Process.start_classisland():
             Log.info('拉起成功，ClassIsland进程正常')
@@ -65,10 +63,12 @@ def main():
     try: 
         global db
         global Process
+        global Snapshot
 
         db = Database(Exec.get_exe_path())
         db.read_database()
         Process = Process(db)
+        Snapshot = Snapshot(db)
         Log.info('Classisland Guardian 已启动')
 
         register_self()

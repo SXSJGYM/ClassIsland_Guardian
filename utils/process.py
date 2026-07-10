@@ -24,11 +24,19 @@ class Process:
         '启动Classisland。 成功返回True，失败返回False'
         Exec.remove_ifeo(self.db.path.get('classisland_process_name'))
         return Exec.start(os.path.join(self.db.path.get('classisland_path'),self.db.get('classisland_launcher_name')))
-        
+
+    # 关闭ClassIsland
+    def kill_classisland(self):
+        '关闭Classisland。 成功返回True，失败返回False'
+        if not Exec.kill_process(self.db.path.get('classisland_process_name')):
+            Log.info('关闭失败')
+            return False
+        return True
+    
     # 重启ClassIsland
     def reboot_classisland(self):
         '重启Classisland。 成功返回True，失败返回False'
-        if not Exec.kill_process(self.db.get('classisland_process_name')):
+        if not self.kill_classisland:
             Log.info('重启失败')
             return False
         time.sleep(3)
