@@ -36,9 +36,17 @@ CIGFile_FILTER_DATA NullFilterData;
 #pragma alloc_text(PAGE, CIGFileQueryTeardown)
 #endif
 
-// 添加回调函数
+// 添加写入回调函数
 FLT_PREOP_CALLBACK_STATUS
-CIGPreCreate(
+CIGPreWrite(
+    _Inout_ PFLT_CALLBACK_DATA Data,
+    _In_ PCFLT_RELATED_OBJECTS FltObjects,
+    _Out_ PVOID* CompletionContext
+);
+
+// 添加读取回调函数
+FLT_PREOP_CALLBACK_STATUS
+CIGPreRead(
     _Inout_ PFLT_CALLBACK_DATA Data,
     _In_ PCFLT_RELATED_OBJECTS FltObjects,
     _Out_ PVOID* CompletionContext
@@ -46,11 +54,11 @@ CIGPreCreate(
 
 // 定义操作回调表-全部拦截
 CONST FLT_OPERATION_REGISTRATION Callbacks[] = {
-    { IRP_MJ_CREATE,           0, CIGPreCreate, NULL },  // 打开/创建
-    { IRP_MJ_READ,             0, CIGPreCreate, NULL },  // 读取
-    { IRP_MJ_WRITE,            0, CIGPreCreate, NULL },  // 写入
-    { IRP_MJ_SET_INFORMATION,  0, CIGPreCreate, NULL },  // 删除/重命名/改属性
-    { IRP_MJ_DIRECTORY_CONTROL,0, CIGPreCreate, NULL },  // 遍历目录（列举文件）
+    { IRP_MJ_CREATE, 0, CIGPreWrite, NULL },  // 打开/创建
+    { IRP_MJ_READ, 0, CIGPreRead, NULL },  // 读取
+    { IRP_MJ_WRITE, 0, CIGPreWrite, NULL },  // 写入
+    { IRP_MJ_SET_INFORMATION, 0, CIGPreWrite, NULL },  // 删除/重命名/改属性
+    { IRP_MJ_DIRECTORY_CONTROL,0, CIGPreRead, NULL },  // 遍历目录（列举文件）
     { IRP_MJ_OPERATION_END }
 };
 
@@ -99,7 +107,7 @@ DriverEntry(
             FltUnregisterFilter(NullFilterData.FilterHandle);
         }
     }
-
+    DbgPrint("[CIG] Driver initialized and filtering started\n");
     return status;
 }
 
@@ -131,8 +139,9 @@ CIGFileQueryTeardown(
     return STATUS_SUCCESS;
 }
 
+// 写入拦截策略
 FLT_PREOP_CALLBACK_STATUS
-CIGPreCreate(
+CIGPreWrite(
     _Inout_ PFLT_CALLBACK_DATA Data,
     _In_ PCFLT_RELATED_OBJECTS FltObjects,
     _Out_ PVOID* CompletionContext
@@ -143,74 +152,62 @@ CIGPreCreate(
     UNREFERENCED_PARAMETER(FltObjects);
     UNREFERENCED_PARAMETER(CompletionContext);
 
-    NTSTATUS status;
-    PFLT_FILE_NAME_INFORMATION nameInfo = NULL;
+    // 先不写，直接返回成功
+    return FLT_PREOP_SUCCESS_NO_CALLBACK;
+}
 
-    status = FltGetFileNameInformation(Data,
-        FLT_FILE_NAME_OPENED | FLT_FILE_NAME_QUERY_DEFAULT,
-        &nameInfo);
-    if (!NT_SUCCESS(status)) {
-        return FLT_PREOP_SUCCESS_NO_CALLBACK;
-    }
+// 读取拦截策略
+FLT_PREOP_CALLBACK_STATUS
+CIGPreRead(
+    _Inout_ PFLT_CALLBACK_DATA Data,
+    _In_ PCFLT_RELATED_OBJECTS FltObjects,
+    _Out_ PVOID* CompletionContext
+)
+{
+    *CompletionContext = NULL;
+    UNREFERENCED_PARAMETER(Data);
+    UNREFERENCED_PARAMETER(FltObjects);
+    UNREFERENCED_PARAMETER(CompletionContext);
 
-    // 在 CIGPreCreate 中，获取 nameInfo 之后、目录拦截之前
-    PUNICODE_STRING processPath = NULL;
-    BOOLEAN isTrusted = FALSE;
+    DbgPrint("[CIG] PreRead entered\n");
 
-    if (NT_SUCCESS(SeLocateProcessImageName(PsGetCurrentProcess(), &processPath)) && processPath != NULL) {
-        // 精确匹配完整路径（注意路径格式可能是 \??\C:\... 或 \Device\HarddiskVolume...）
-        if (wcsstr(processPath->Buffer, L"\\ClassIslandGuardian\\config.exe") != NULL ||
-            wcsstr(processPath->Buffer, L"\\ClassIslandGuardian\\guardian.exe") != NULL) {
-            isTrusted = TRUE;
+    // 快速核验是否为白名单进程
+    if (KeGetCurrentIrql() <= PASSIVE_LEVEL) {
+        PUNICODE_STRING processPath = NULL;
+        if (NT_SUCCESS(SeLocateProcessImageName(PsGetCurrentProcess(), &processPath)) && processPath != NULL) {
+            //DbgPrint("Process Image Path: %wZ\n",processPath);
+            ExFreePool(processPath);
         }
-        ExFreePool(processPath);
-        processPath = NULL;
+    }
+    else {
+        // 不安全：放弃获取进程路径，直接放行
+        //DbgPrint("[CIG] IRQL too high, skipping process path check\n");
     }
 
-    // 如果是可信进程，直接放行（绕过所有目录检查）
-    if (isTrusted) {
-        FltReleaseFileNameInformation(nameInfo);
-        return FLT_PREOP_SUCCESS_NO_CALLBACK;
-    }
+    // GuardianRecovery目录
+    UNICODE_STRING guardianRecoveryPath = { 0 };
+    RtlInitUnicodeString(&guardianRecoveryPath, L"\\GuardianRecovery");
 
-    // 空指针保护
-    if (nameInfo->Name.Buffer == NULL) {
-        FltReleaseFileNameInformation(nameInfo);
-        return FLT_PREOP_SUCCESS_NO_CALLBACK;
-    }
-
-    // === 目录保护策略 ===
-    // 1. GuardianRecovery：完全封锁
-    if (wcsstr(nameInfo->Name.Buffer, L"\\GuardianRecovery") != NULL) {
-        DbgPrint("[CIG] BLOCKED: Access to GuardianRecovery\n");
-        Data->IoStatus.Status = STATUS_ACCESS_DENIED;
-        Data->IoStatus.Information = 0;
-        FltReleaseFileNameInformation(nameInfo);
-        return FLT_PREOP_COMPLETE;
-    }
-
-    // 2. Guardian 目录：读放行，写拦截
-    if (wcsstr(nameInfo->Name.Buffer, L"\\Program Files\\ClassIslandGuardian") != NULL) {
-        ULONG createDisposition = Data->Iopb->Parameters.Create.Options >> 24;
-        ACCESS_MASK desiredAccess = Data->Iopb->Parameters.Create.SecurityContext->DesiredAccess;
-
-        BOOLEAN isWrite = (createDisposition != FILE_OPEN) ||
-            (desiredAccess & (FILE_WRITE_DATA | FILE_APPEND_DATA | FILE_DELETE_CHILD));
-
-        if (isWrite) {
-            DbgPrint("[CIG] BLOCKED: Write access to Guardian directory\n");
-            Data->IoStatus.Status = STATUS_ACCESS_DENIED;
-            Data->IoStatus.Information = 0;
-            FltReleaseFileNameInformation(nameInfo);
-            return FLT_PREOP_COMPLETE;
+    // 获取被操作目录
+    PFLT_FILE_NAME_INFORMATION fileNameInfo = NULL;
+    if (NT_SUCCESS(FltGetFileNameInformation(
+        Data,
+        FLT_FILE_NAME_NORMALIZED | FLT_FILE_NAME_QUERY_DEFAULT,
+        &fileNameInfo
+    ))) {
+        DbgPrint("[CIG] FltGetFileNameInformation entered\n");
+        if (NT_SUCCESS(FltParseFileNameInformation(fileNameInfo))) {
+            // 拦截逻辑
+            DbgPrint("[CIG] Read Name: %wZ\n", &fileNameInfo->Name);
+            if (RtlPrefixUnicodeString(&guardianRecoveryPath, &fileNameInfo -> Name, TRUE)) {
+                DbgPrint("[CIG] FLT_PREOP_COMPLETE\n");
+                Data->IoStatus.Status = STATUS_ACCESS_DENIED;
+                Data->IoStatus.Information = 0;
+                FltReleaseFileNameInformation(fileNameInfo);
+                return FLT_PREOP_COMPLETE;
+            }
         }
-        // 读取放行
-        DbgPrint("[CIG] ALLOWED: Read access to Guardian directory\n");
-        FltReleaseFileNameInformation(nameInfo);
-        return FLT_PREOP_SUCCESS_NO_CALLBACK;
+        FltReleaseFileNameInformation(fileNameInfo);
     }
-
-    // 其他路径放行
-    FltReleaseFileNameInformation(nameInfo);
     return FLT_PREOP_SUCCESS_NO_CALLBACK;
 }
