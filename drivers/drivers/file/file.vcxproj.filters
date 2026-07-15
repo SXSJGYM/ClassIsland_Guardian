@@ -23,4 +23,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
+  <ItemGroup>
+    <Inf Include="file.inf">
+      <Filter>Driver Files</Filter>
+    </Inf>
+  </ItemGroup>
 </Project>

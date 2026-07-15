@@ -97,6 +97,9 @@
   <ItemGroup>
     <ClCompile Include="file.c" />
   </ItemGroup>
+  <ItemGroup>
+    <Inf Include="file.inf" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
