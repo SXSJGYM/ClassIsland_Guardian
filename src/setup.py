@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 GYM_Latest
+
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 import os
