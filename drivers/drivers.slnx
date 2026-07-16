@@ -6,4 +6,7 @@
   <Project Path="file/file.vcxproj">
     <Deploy />
   </Project>
+  <Project Path="process/process.vcxproj">
+    <Deploy />
+  </Project>
 </Solution>
