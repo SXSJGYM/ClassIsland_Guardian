@@ -39,7 +39,7 @@ class Process:
     # 重启ClassIsland
     def reboot_classisland(self):
         '重启Classisland。 成功返回True，失败返回False'
-        if not self.kill_classisland:
+        if not self.kill_classisland():
             Log.info('重启失败')
             return False
         time.sleep(3)
