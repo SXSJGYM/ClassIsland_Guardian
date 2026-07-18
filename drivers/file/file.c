@@ -232,8 +232,8 @@ BOOLEAN IsProcessTrusted(VOID) {
     if (NT_SUCCESS(SeLocateProcessImageName(PsGetCurrentProcess(), &processPath)) && processPath != NULL) {
         __try {
             UNICODE_STRING saveProcessPath;
-            WCHAR saveProcessPath_buf[512];
-            RtlInitEmptyUnicodeString(&saveProcessPath, saveProcessPath_buf, 512 * sizeof(WCHAR));
+            WCHAR saveProcessPath_buf[128];
+            RtlInitEmptyUnicodeString(&saveProcessPath, saveProcessPath_buf, 128 * sizeof(WCHAR));
             RtlCopyUnicodeString(&saveProcessPath, processPath);
             if (FsRtlIsNameInExpression(&g_guardianExePath, &saveProcessPath, TRUE, NULL) || FsRtlIsNameInExpression(&g_configExePath, &saveProcessPath, TRUE, NULL)) {
                 ExFreePool(processPath);

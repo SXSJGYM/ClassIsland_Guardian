@@ -6,7 +6,7 @@
   <Project Path="file/file.vcxproj">
     <Deploy />
   </Project>
-  <Project Path="process/ObCallbackTest.vcxproj" Id="850e3104-6de2-4fa3-8e53-4ca21a230429">
+  <Project Path="process/process.vcxproj">
     <Deploy />
   </Project>
 </Solution>
