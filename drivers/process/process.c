@@ -1,9 +1,5 @@
 ﻿#include <ntifs.h>
 
-#ifndef PROCESS_TERMINATE
-#define PROCESS_TERMINATE 0x0001
-#endif
-
 PVOID g_RegHandle = NULL;
 
 #pragma data_seg("NONPAGED")
@@ -120,6 +116,7 @@ NTSTATUS DriverEntry(
 
 	DriverObject->DriverUnload = CIGProcessUnload;
 
+    DbgPrint("Entry DriverEntry");
     return STATUS_SUCCESS;
 }
 
@@ -173,7 +170,6 @@ OB_PREOP_CALLBACK_STATUS CIGProcessPreOperation(
     _In_ POB_PRE_OPERATION_INFORMATION OperationInformation
 ) {
     UNREFERENCED_PARAMETER(RegistrationContext);
-
     // 快速核验
     // 请求来自内核直接放行
     if (OperationInformation->KernelHandle == 1) {
@@ -216,7 +212,21 @@ OB_PREOP_CALLBACK_STATUS CIGProcessPreOperation(
                     break;
                 }
                 if (DesiredAccess) {
-                    *DesiredAccess &= ~PROCESS_TERMINATE;
+                    DbgPrint(" DesiredAccess\n");
+                    DbgPrint("[CIG] Process path: %ws\n\n", saveProcessPath);
+                    if (wcsstr(saveProcessPath, g_classislandExeName.Buffer) != NULL) {
+                        // 对于ClassIsland，仅仅剥离 PROCESS_TERMINATE ，防止其自身行为被拦截
+                        *DesiredAccess &= ~(0x0001);  // PROCESS_TERMINATE
+                    }
+                    else
+                    {
+                        // 对于Guardian主程序，激进的剥离所有权限并直接拒绝访问防止被利用
+                        *DesiredAccess = 0;
+                        ExFreePoolWithTag(saveProcessPath, 'CIGP');
+                        ExFreePool(processPath);
+                        return STATUS_ACCESS_DENIED;
+                    }
+                    return OB_PREOP_SUCCESS;
                 }
             }
             ExFreePoolWithTag(saveProcessPath, 'CIGP');
