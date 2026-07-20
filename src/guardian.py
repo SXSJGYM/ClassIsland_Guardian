@@ -94,7 +94,12 @@ def main():
                 with open(logfile, 'a') as f:
                     f.write(f'{datetime.now()}: {e}\n')
             time.sleep(5)
-            os.execl(sys.executable, sys.executable, *sys.argv)
+            subprocess.Popen(
+                [sys.executable],
+                cwd=os.path.dirname(sys.executable),
+                close_fds=True
+            )
+            sys.exit(0)
 
 if __name__ == "__main__":
     main()
