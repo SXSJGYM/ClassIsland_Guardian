@@ -110,13 +110,10 @@ NTSTATUS DriverEntry(
     // 注册 ObRegisterCallbacks
     status = ObRegisterCallbacks(&cbReg, &g_RegHandle);
     if (!NT_SUCCESS(status)) {
-        DbgPrint("[process.sys] ObRegisterCallbacks failed: 0x%X\n", status);
         return status;
     }
 
 	DriverObject->DriverUnload = CIGProcessUnload;
-
-    DbgPrint("Entry DriverEntry");
     return STATUS_SUCCESS;
 }
 
@@ -212,21 +209,7 @@ OB_PREOP_CALLBACK_STATUS CIGProcessPreOperation(
                     break;
                 }
                 if (DesiredAccess) {
-                    DbgPrint(" DesiredAccess\n");
-                    DbgPrint("[CIG] Process path: %ws\n\n", saveProcessPath);
-                    if (wcsstr(saveProcessPath, g_classislandExeName.Buffer) != NULL) {
-                        // 对于ClassIsland，仅仅剥离 PROCESS_TERMINATE ，防止其自身行为被拦截
-                        *DesiredAccess &= ~(0x0001);  // PROCESS_TERMINATE
-                    }
-                    else
-                    {
-                        // 对于Guardian主程序，激进的剥离所有权限并直接拒绝访问防止被利用
-                        *DesiredAccess = 0;
-                        ExFreePoolWithTag(saveProcessPath, 'CIGP');
-                        ExFreePool(processPath);
-                        return STATUS_ACCESS_DENIED;
-                    }
-                    return OB_PREOP_SUCCESS;
+                    *DesiredAccess &= ~(0x0001);  // PROCESS_TERMINATE
                 }
             }
             ExFreePoolWithTag(saveProcessPath, 'CIGP');
