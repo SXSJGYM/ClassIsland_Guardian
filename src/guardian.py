@@ -69,7 +69,8 @@ def main():
         global Snapshot
 
         db = Database(Exec.get_exe_path())
-        db.read_database()
+        if(not db.read_database()):
+            sys.exit(0)
         Process = Process(db)
         Snapshot = Snapshot(db)
         Log.info('Classisland Guardian 已启动')

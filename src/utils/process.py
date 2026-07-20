@@ -26,7 +26,7 @@ class Process:
     def start_classisland(self):
         '启动Classisland。 成功返回True，失败返回False'
         Exec.remove_ifeo(self.db.path.get('classisland_process_name'))
-        return Exec.start(os.path.join(self.db.path.get('classisland_path'),self.db.get('classisland_launcher_name')))
+        return Exec.start(os.path.join(self.db.path.get('classisland_path'),self.db.path.get('classisland_launcher_name')))
 
     # 关闭ClassIsland
     def kill_classisland(self):
