@@ -33,7 +33,7 @@ def main():
 
     drive, _ = os.path.splitdrive(guardianrecovery_path)
     guardian_path = os.path.join(drive, "Program Files", "Guardian")
-    Log.info('初始化成功。')
+    Log.info('初始化成功 ~')
 
     time.sleep(2)
 
@@ -58,15 +58,19 @@ ClassIsland Guardian Recovery
         try:
             # 备份日志文件
             try:
+                try:
+                    os.remove(os.path.join(guardianrecovery_path,'guardian.log'))
+                except:
+                    pass
                 shutil.copy2(os.path.join(guardian_path,'guardian.log'), os.path.join(guardianrecovery_path,'guardian.log'))
-                Log.info(f'备份日志文件成功。')
+                Log.info(f'备份日志文件成功 ~')
             except Exception as e:
                 Log.warn(f'备份日志文件失败，错误为：{e}')
 
             # 修复程序文件
             try:
                 shutil.rmtree(guardian_path)
-                Log.info('清除旧程序文件成功。')
+                Log.info('清除旧程序文件成功 ~')
             except:
                 pass
             def copy_and_log(src, dst):
@@ -77,13 +81,13 @@ ClassIsland Guardian Recovery
                 guardian_path,
                 copy_function=copy_and_log
             )
-            Log.info(f'修复文件成功。')
+            Log.info(f'修复文件成功 ~')
 
             # 恢复日志文件
             try:
                 shutil.copy2(os.path.join(guardianrecovery_path,'guardian.log'), os.path.join(guardian_path,'guardian.log'))
                 os.remove(os.path.join(guardianrecovery_path,'guardian.log'))
-                Log.info(f'恢复日志文件成功。')
+                Log.info(f'恢复日志文件成功 ~')
             except Exception as e:
                 Log.warn(f'恢复日志文件失败，错误为：{e}')
 
@@ -94,7 +98,7 @@ ClassIsland Guardian Recovery
                 f.write("""@echo off
             start /b "" "%ProgramFiles%\\Guardian\\check.exe"
             """)
-            Log.info('创建check.exe开机自启项成功。')
+            Log.info('创建 check.exe 开机自启项成功 ~')
 
         except Exception as e:
             Log.error(f'修复失败，错误为：{e}')
