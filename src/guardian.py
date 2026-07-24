@@ -12,6 +12,7 @@ from utils.database import Database
 from utils.process import Process
 from utils.exec import Exec
 from utils.snapshot import Snapshot
+from utils.version import VERSION, CODENAME
 
 # 设置计划任务
 def register_self():
@@ -24,10 +25,10 @@ def register_self():
             capture_output=True, text=True
         )
         if result.returncode == 0:
-            Log.info('自启动项存在')
+            Log.info('自启动项存在 ~')
             return True
         
-        Log.info('自启动项不存在，创建')
+        Log.info('自启动项不存在，尝试创建自启动项 ~')
         subprocess.run([
             "schtasks", "/Create",
             "/TN", task_name,
@@ -37,7 +38,7 @@ def register_self():
             "/RL", "HIGHEST",
             "/F"
         ], capture_output=True)
-        Log.info('创建成功')
+        Log.info('创建成功 ~')
         return True
     except Exception:
         Log.info('')
@@ -46,21 +47,21 @@ def register_self():
 # 进程丢失后处理函数
 def process_missing():
     if Process.start_classisland():
-        Log.warn('尝试拉起ClassIsland')
+        Log.warn('尝试拉起ClassIsland。')
         time.sleep(30)
         status = Process.check_classisland_status()
         if status == 1:
-            Log.info('拉起成功，ClassIsland进程正常')
+            Log.info('拉起成功，ClassIsland进程正常 ~')
             return
     
     Log.warn('拉起失败，ClassIsland进程仍未在运行，尝试修复')
     if Snapshot.restore_snapshot(Snapshot.list_snapshot()[0]):
-        Log.info('修复成功，尝试拉起ClassIsland')
+        Log.info('修复成功，尝试拉起ClassIsland ~')
         if Process.start_classisland():
-            Log.info('拉起成功，ClassIsland进程正常')
+            Log.info('拉起成功，ClassIsland进程正常 ~')
             return
 
-    Log.error('修复失败')
+    Log.error('修复失败。')
 
 def main():
     try: 
@@ -73,7 +74,7 @@ def main():
             sys.exit(0)
         Process = Process(db)
         Snapshot = Snapshot(db)
-        Log.info('Classisland Guardian 已启动')
+        Log.info(f'ClassIsland Guardian 已启动 ~ | 版本：{VERSION} ({CODENAME})')
 
         register_self()
 
@@ -81,7 +82,7 @@ def main():
             time.sleep(120)
             status = Process.check_classisland_status()
             if status == 1:
-                Log.info('检查ClassIsland，进程正常')
+                Log.info('检查ClassIsland，进程正常 ~')
             elif status == 0:
                 process_missing()
             elif status >= 2:
